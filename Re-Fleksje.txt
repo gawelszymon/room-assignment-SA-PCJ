@@ -1,0 +1,29 @@
+Ogolnie w poprzedniej implementacji MPI źle zrozumielismy problem -
+zamiast przydzielic n studentow do n/2 pokoi, przydzielismy n studentow do n pokoi
+kierujac sie ich preferencja zapisana w macierzy preferencji.
+
+Tutaj dla PCJ przydzielamy n studentow do n/2 pokoi wg preferencji kto z kim najmniej sie nie lubi -
+w macierzy preferencji z danych wejsciowych zawarta jest informacja o tym jak bardzo kto nie chce z kim
+byc, dlatego kosztem jest Suma niecheci po losowym, inicjujacym przydziale.
+
+Rola programowania rownoleglego w implementacji
+upraszczając - uruchamiamy ten sam program na jednoczesnie x nodach, dla roznych poczatkowych
+rozlosowan przydzilu do pokoi tj. dla roznych wartosci seed.
+W podejściu SA Distributed Single-Chain do problemu podchodzimy inaczej niż przy klasycznym parallel multi-start. 
+Zamiast uruchamiać wiele całkowicie niezależnych instancji algorytmu SA (każda z osobnym seedem) na niezależnych węzłach i potem 
+robić redukcję globalną, realizujemy pojedynczy łańcuch symulowanego wyżarzania, który jest dystrybuowany:
+fragmenty (kroki, iteracje lub odcinki łańcucha) są realizowane współbieżnie na wielu węzłach/nodach.
+
+Każdy węzeł przejmuje pewien zakres iteracji SA, a komunikacja i synchronizacja następuje po zakończeniu pracy danej
+części – wyniki są przekazywane do kolejnych nodów lub poddawane agregacji, w zależności od konkretnej implementacji.
+Takie podejście koncentruje się bardziej na efektywniejszym przeszukaniu przestrzeni rozwiązań przez dystrybucję
+"jednej długiej ścieżki" SA, niż na uruchamianiu wielu prób równolegle i wybieraniu najlepszej.
+
+W pliku RoomAssignmenet.java znajduje się ogólna implementacja algorytmu SA dla problemu przydziału pokoi.
+Dystrybucja obliczeń (distributed single-chain) jest realizowana w klasie RoomAssignmenetPCA przez
+synchronizację i przekazywanie stanu rozwiązania pomiędzy węzłami, sterowaną odpowiednimi blokami kodu.
+Ewaluacja jest osiagana poprzez warunek if oraz przekazywanie i odbiór danych do nodu 0 (thread 0).
+Zasadnicza logika SA realizowana jest "w łańcuchu", przechodząc przez wszystkie nody po kolei lub w ustalonej rundzie synchronizacji.
+
+wynik zawarty jest w oddzielnym pliku gdzie podsumowujemy performance dla kazdego noda i przedstwaimy
+najlepszse rozwiazanie tj. najlepszy sposob przydzialu pokoju dla ktorego funkcja kosztu jest najnizsza
